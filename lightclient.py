@@ -4,20 +4,14 @@ import socket
 import struct
 import sys
 
-# --- Protocol Constants ---
 PROTOCOL_VERSION = 17
-PACKET_HEADER_FORMAT = ">III"  # Big-endian, 3 Unsigned Integers
-HEADER_SIZE = struct.calcsize(PACKET_HEADER_FORMAT)  # 12 bytes
-
-# --- Message Type Constants ---
+PACKET_HEADER_FORMAT = ">III"
+HEADER_SIZE = struct.calcsize(PACKET_HEADER_FORMAT)
 MSG_TYPE_HELLO = 1
 MSG_TYPE_COMMAND = 2
 
-# --- Helper Function: Logging Setup ---
 
-
-def setup_logging(log_file_path):
-    """Sets up a logger that writes messages to both the console and the specified file."""
+def setup_logging(log_file_path: str) -> None:
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
 
@@ -31,27 +25,16 @@ def setup_logging(log_file_path):
     )
 
 
-# --- Helper Function: Packet Creation ---
-
-
-def create_packet(version, msg_type, message_body):
-    """Constructs a packet using the required protocol format (>III header)."""
-
+def create_packet(version: int, msg_type: int, message_body: str) -> bytes:
     encoded_message = message_body.encode("ascii")
     message_length = len(encoded_message)
 
-    # Pack the Header: Version(4B), Message Type(4B), Message Length(4B)
     header = struct.pack(PACKET_HEADER_FORMAT, version, msg_type, message_length)
 
     return header + encoded_message
 
 
-# --- Helper Function: Receive Reply ---
-
-
-def receive_reply(s):
-    """Receives a packet reply from the server (Header + Payload)."""
-
+def receive_reply(s: socket.socket) -> tuple[int, int, str]:
     # Receive the header
     header_data = s.recv(HEADER_SIZE)
     if not header_data:
@@ -80,10 +63,7 @@ def receive_reply(s):
     return version, msg_type, message
 
 
-# --- Core Logic: Client Main Execution ---
-
-
-def start_client(server_ip, port):
+def start_client(server_ip: str, port: int) -> None:
     """Main client logic for connecting and sending packets."""
 
     logging.info(f"Attempting connection to {server_ip}:{port}")
@@ -99,7 +79,7 @@ def start_client(server_ip, port):
             logging.info("Sending HELLO Packet")  # Matches sample output
 
             # --- PHASE 2: Receive HELLO Reply (Client Requirement 4) ---
-            reply_version, reply_type, reply_message = receive_reply(s)
+            reply_version, _, reply_message = receive_reply(s)
 
             if reply_version != PROTOCOL_VERSION:
                 return  # Stop if version mismatch
@@ -116,7 +96,7 @@ def start_client(server_ip, port):
             logging.info("Sending command")  # Matches sample output
 
             # --- PHASE 4: Receive Server's Reply (Client Requirement 6) ---
-            success_version, success_type, success_message = receive_reply(s)
+            _, _, success_message = receive_reply(s)
 
             logging.info(f"Received Message {success_message}")
             if success_message == "SUCCESS":
@@ -135,9 +115,7 @@ def start_client(server_ip, port):
             logging.error(f"An unexpected error occurred: {e}")
 
 
-# --- Main Execution Block ---
-
-if __name__ == "__main__":
+def main() -> None:
     # Client Requirement 1: Parse command line arguments
     parser = argparse.ArgumentParser(description="Simple Protocol Light Client")
     parser.add_argument(
@@ -154,3 +132,7 @@ if __name__ == "__main__":
 
     setup_logging(args.log)
     start_client(args.server, args.port)
+
+
+if __name__ == "__main__":
+    main()
