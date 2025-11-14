@@ -38,9 +38,7 @@ def send_reply(
     client_socket.sendall(header + encoded_message)
 
 
-def process_command(
-    client_socket: socket.socket, version: int, msg_type: int, message: str
-) -> None:
+def process_command(client_socket: socket.socket, msg_type: int, message: str) -> None:
     if msg_type == MSG_TYPE_HELLO:
         # Deliverable 4: Log the connection and send a hello back
         logging.info("Received Message Hello")
@@ -104,7 +102,7 @@ def handle_client(
             message_data = client_socket.recv(msg_len)
             message = message_data.decode("ascii").strip("\x00")
 
-            process_command(client_socket, version, msg_type, message)
+            process_command(client_socket, msg_type, message)
 
         except ConnectionResetError:
             logging.warning(f"Connection reset by client: ('{ip}', {port})")

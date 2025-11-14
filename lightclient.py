@@ -34,9 +34,9 @@ def create_packet(version: int, msg_type: int, message_body: str) -> bytes:
     return header + encoded_message
 
 
-def receive_reply(s: socket.socket) -> tuple[int, int, str]:
+def receive_reply(client_socket: socket.socket) -> tuple[int, int, str]:
     # Receive the header
-    header_data = s.recv(HEADER_SIZE)
+    header_data = client_socket.recv(HEADER_SIZE)
     if not header_data:
         raise ConnectionError("Connection closed by server while waiting for header.")
 
@@ -53,7 +53,7 @@ def receive_reply(s: socket.socket) -> tuple[int, int, str]:
         logging.warning("VERSION MISMATCH")
 
     # Receive the payload
-    message_data = s.recv(msg_len)
+    message_data = client_socket.recv(msg_len)
     if len(message_data) < msg_len:
         raise ConnectionError("Received incomplete message payload.")
 
@@ -67,18 +67,18 @@ def start_client(server_ip: str, port: int) -> None:
 
     logging.info(f"Attempting connection to {server_ip}:{port}")
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         try:
             # Requirement 2: Connect to the server
-            s.connect((server_ip, port))
+            client_socket.connect((server_ip, port))
 
             # Requirement 3: Construct and send HELLO
             hello_packet = create_packet(PROTOCOL_VERSION, MSG_TYPE_HELLO, "Hello")
-            s.sendall(hello_packet)
+            client_socket.sendall(hello_packet)
             logging.info("Sending HELLO Packet")
 
             # Requirement 4: Receive HELLO Reply and check version
-            reply_version, _, reply_message = receive_reply(s)
+            reply_version, _, reply_message = receive_reply(client_socket)
 
             if reply_version != PROTOCOL_VERSION:
                 return
@@ -90,27 +90,25 @@ def start_client(server_ip: str, port: int) -> None:
             command_packet = create_packet(
                 PROTOCOL_VERSION, MSG_TYPE_COMMAND, command_body
             )
-            s.sendall(command_packet)
+            client_socket.sendall(command_packet)
             logging.info("Sending command")
 
             # Requirement 6: Receive server's reply
-            _, _, success_message = receive_reply(s)
+            _, _, success_message = receive_reply(client_socket)
 
             logging.info(f"Received Message {success_message}")
             if success_message == "SUCCESS":
                 logging.info("Command Successful")
 
             # Requirement 6: Gracefully shutdown the socket
-            s.shutdown(socket.SHUT_RDWR)
-            s.close()
+            client_socket.shutdown(socket.SHUT_RDWR)
+            client_socket.close()
             logging.info("Closing socket")
 
         except ConnectionRefusedError:
             logging.error(
                 f"Connection refused by server at {server_ip}:{port}. Is the server running?"
             )
-        except Exception as e:
-            logging.error(f"An unexpected error occurred: {e}")
 
 
 def main() -> None:
