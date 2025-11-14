@@ -5,6 +5,7 @@ import struct
 import sys
 
 PROTOCOL_VERSION = 17
+# Deliverable 5: Packet format structure
 PACKET_HEADER_FORMAT = ">III"
 HEADER_SIZE = struct.calcsize(PACKET_HEADER_FORMAT)
 # Deliverable 8: Message Type Constants
@@ -49,9 +50,9 @@ def process_command(
     elif msg_type == MSG_TYPE_COMMAND:
         command_name = message
 
-        # Deliverable 8: Check message type
+        # Deliverable 8: Check message body for supported command
         if command_name == "LIGHTON" or command_name == "LIGHTOFF":
-            # Deliverable 9: Log supported command
+            # Deliverable 9: Log supported command execution
             logging.info(f"EXECUTING SUPPORTED COMMAND: {command_name}")
 
             # Deliverable 10: Send back a "SUCCESS" message
@@ -72,16 +73,16 @@ def handle_client(
 ) -> None:
     ip, port = client_address
 
-    # Deliverable 3: Log client connection
+    # Deliverable 3: Log client connection details
     logging.info(f"Received connection from {ip}:{port}")
 
-    # Deliverable 2: Server won't exit after receiving the first packet
+    # Deliverable 2: Server must not exit after receiving a single packet
     while True:
         try:
-            # Deliverable 6: Receive the packet header
+            # Deliverable 6: Receive the packet header first
             header_data = client_socket.recv(HEADER_SIZE)
 
-            # Deliverable 12: Check for 0-byte messages (client closed connection)
+            # Deliverable 12: Check for 0-byte message (client closed connection)
             if not header_data:
                 logging.info(f"Client disconnected gracefully: ('{ip}', {port})")
                 break
@@ -94,12 +95,12 @@ def handle_client(
                 f"Received Data: version: {version}, message_type: {msg_type}, length: {msg_len}"
             )
 
-            # Deliverable 7: Check version
+            # Deliverable 7: Check if Version is 17
             if version != PROTOCOL_VERSION:
                 logging.error("VERSION MISMATCH. Continuing to listen.")
                 break
 
-            # Deliverable 6: Receive the message
+            # Deliverable 6: Receive the message payload
             message_data = client_socket.recv(msg_len)
             message = message_data.decode("ascii").strip("\x00")
 

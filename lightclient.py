@@ -42,12 +42,11 @@ def receive_reply(s: socket.socket) -> tuple[int, int, str]:
 
     version, msg_type, msg_len = struct.unpack(PACKET_HEADER_FORMAT, header_data)
 
-    # Log received header data (matches sample output)
     logging.info(
         f"Received Data: version: {version} type: {msg_type} length: {msg_len}"
     )
 
-    # Client Requirement 4: Check version
+    # Requirement 4: Check version and log status
     if version == PROTOCOL_VERSION:
         logging.info("VERSION ACCEPTED")
     else:
@@ -70,42 +69,41 @@ def start_client(server_ip: str, port: int) -> None:
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
-            # Client Requirement 2: Connect to the server
+            # Requirement 2: Connect to the server
             s.connect((server_ip, port))
 
-            # --- PHASE 1: Send HELLO Packet (Client Requirement 3) ---
+            # Requirement 3: Construct and send HELLO
             hello_packet = create_packet(PROTOCOL_VERSION, MSG_TYPE_HELLO, "Hello")
             s.sendall(hello_packet)
-            logging.info("Sending HELLO Packet")  # Matches sample output
+            logging.info("Sending HELLO Packet")
 
-            # --- PHASE 2: Receive HELLO Reply (Client Requirement 4) ---
+            # Requirement 4: Receive HELLO Reply and check version
             reply_version, _, reply_message = receive_reply(s)
 
             if reply_version != PROTOCOL_VERSION:
-                return  # Stop if version mismatch
+                return
 
             logging.info(f"Received Message {reply_message}")
 
-            # --- PHASE 3: Send Command Packet (Client Requirement 5) ---
-            # Send LIGHTON first, as it's the dominant example in the sample
+            # Requirement 5: Send a command packet if version is accepted
             command_body = "LIGHTON"
             command_packet = create_packet(
                 PROTOCOL_VERSION, MSG_TYPE_COMMAND, command_body
             )
             s.sendall(command_packet)
-            logging.info("Sending command")  # Matches sample output
+            logging.info("Sending command")
 
-            # --- PHASE 4: Receive Server's Reply (Client Requirement 6) ---
+            # Requirement 6: Receive server's reply
             _, _, success_message = receive_reply(s)
 
             logging.info(f"Received Message {success_message}")
             if success_message == "SUCCESS":
-                logging.info("Command Successful")  # Matches sample output
+                logging.info("Command Successful")
 
-            # Client Requirement 6: Gracefully shutdown the socket.
+            # Requirement 6: Gracefully shutdown the socket
             s.shutdown(socket.SHUT_RDWR)
             s.close()
-            logging.info("Closing socket")  # Matches sample output
+            logging.info("Closing socket")
 
         except ConnectionRefusedError:
             logging.error(
@@ -116,7 +114,7 @@ def start_client(server_ip: str, port: int) -> None:
 
 
 def main() -> None:
-    # Client Requirement 1: Parse command line arguments
+    # Requirement 1: Parse command line arguments (server, port, logfile).
     parser = argparse.ArgumentParser(description="Simple Protocol Light Client")
     parser.add_argument(
         "-s", "--server", type=str, required=True, help="The IP address of the server."
