@@ -98,6 +98,8 @@ def handle_client(
                 logging.error("VERSION MISMATCH. Continuing to listen.")
                 break
 
+            logging.info("VERSION ACCEPTED")
+
             # Deliverable 6: Receive the message payload
             message_data = client_socket.recv(msg_len)
             message = message_data.decode("ascii").strip("\x00")
